@@ -1,0 +1,37 @@
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+def writeSourceJar = tasks.register('otherLibSources', Zip) {
+    archiveFileName = 'other-lib-local-sources.jar'
+    destinationDirectory = file('build/repo/other-lib/sources/')
+    from 'otherlib-sources'
+}
+
+def otherLibCompile = tasks.register('otherLibCompile', JavaCompile) {
+    classpath = files()
+    source = files("otherlib-sources")
+    destinationDirectory = file('build/repo/other-lib/classes/')
+}
+
+def writeFakeIvyFile = tasks.register('writeFakeIvyFile') {
+    outputs.file('build/repo/other-lib/ivydata-local.properties')
+    doFirst {
+        file('build/repo/other-lib/ivydata-local.properties').text = ""
+    }
+}
+
+def otherLibJar = tasks.register('otherLibJar', Jar) {
+    archiveFileName = 'other-lib-local.jar'
+    destinationDirectory = file('build/repo/other-lib/jars/')
+    from otherLibCompile.get().destinationDirectory
+    dependsOn(writeFakeIvyFile)
+    dependsOn(writeSourceJar)
+}
+
+dependencies {
+    implementation files(otherLibJar)
+}
